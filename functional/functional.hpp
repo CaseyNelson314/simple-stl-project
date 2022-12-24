@@ -7,7 +7,7 @@ template <class> class function;
 template <class R, class... Args>
 class function<R(Args...)> {
 
-	// �֐���ێ����邽�߂̉��z�֐��e�[�u��
+	// 関数を保持するための仮想関数テーブル
 	struct Vtable {
 		R(*call)(void* function_ptr, Args&&... args);
 		void (*destroy)(void* function_ptr);
@@ -24,11 +24,11 @@ public:
 		, vTable(nullptr)
 	{}
 
-	// �֐��|�C���^��ێ�����R���X�g���N�^
+	// 関数ポインタを保持するコンストラクタ
 	template <class Functor>
 	function(Functor&& f) {
 
-		// �t�@���N�^��ێ����邽�߂̉��z�֐��e�[�u��
+		// ファンクタを保持するための仮想関数テーブル
 		static Vtable staticVTable = {
 			[](void* function_ptr, Args&&... args) -> R {
 				return (*reinterpret_cast<Functor*>(function_ptr))(std::forward<Args>(args)...);
@@ -36,7 +36,7 @@ public:
 			[](void* function_ptr) { delete reinterpret_cast<Functor*>(function_ptr); }
 		};
 
-		// ���z�֐��e�[�u���ɃZ�b�g
+		// 仮想関数テーブルにセット
 		functionPtr = new Functor(f);
 		vTable = &staticVTable;
 
@@ -53,11 +53,5 @@ public:
 		return vTable->call(functionPtr, std::forward<Args>(args)...);
 
 	}
-
-	template <class T>
-	function(const function<T>&) = delete;
-
-	template <class T>
-	function(function<T>&&) = delete;
 
 };
