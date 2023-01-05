@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 
 #include "functional.hpp"
+#include "optional.hpp"
 
 int main() {
 
@@ -45,5 +46,22 @@ int main() {
 		std::cout << f();
 
 		std::cout << std::endl;
+	}
+
+	{
+		// any
+		auto temp = make_optional(100);
+		temp.reset();
+		if (temp) {
+			std::cout << *temp;
+		}
+		else {
+			try {
+				*temp;
+			}
+			catch (const std::exception& e) {
+				std::cerr << e.what();
+			}
+		}
 	}
 }
