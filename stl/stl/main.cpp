@@ -1,7 +1,8 @@
 ﻿#include <iostream>
 
 #include "functional.hpp"
-#include <functional>
+#include "memory.hpp"
+#include <memory>
 
 int main()
 {
@@ -11,10 +12,16 @@ int main()
 
 	{
 		// 関数クロージャーを入れよう！
-		casey::function<void()> f = []() {
+		casey::function<void()> a = []() {
 			std::cout << "a";
 		};
-		f();
+		casey::function<void()> b = []() {
+			std::cout << "b";
+		};
+		std::swap(a, b);
+
+		a();
+		b();
 	}
 
 }

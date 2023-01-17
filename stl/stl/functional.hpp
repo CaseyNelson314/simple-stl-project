@@ -115,13 +115,13 @@ namespace casey {
 			if (this == &r);
 			else
 			{
-				const auto count = *counter + *r.counter;
-				delete counter;
-				counter = r.counter;
-				*counter = count;
-
-				vTable = r.vTable;
+				if (counter) {
+					const auto count = *counter + *r.counter;
+					delete counter;
+				}
+				vTable  = r.vTable;
 				functor = r.functor;
+				counter = r.counter;
 
 				r.vTable = nullptr;
 				r.functor = nullptr;
@@ -155,9 +155,9 @@ namespace casey {
 		}
 
 		void swap(function& r) {
-			auto&& temp = r;
-			r = *this;
-			*this = r;
+			auto&& temp = std::move(r);
+			r = std::move(*this);
+			*this = std::move(temp);
 		}
 
 

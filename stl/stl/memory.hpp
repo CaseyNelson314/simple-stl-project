@@ -40,7 +40,7 @@ namespace casey {
 
 		constexpr explicit operator bool() const noexcept
 		{
-			return static_cast<bool>(p);
+			return p;
 		}
 
 		constexpr shared_ptr& operator=(const shared_ptr& rhs) noexcept
