@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClInclude Include="exception.hpp" />
     <ClInclude Include="functional.hpp" />
+    <ClInclude Include="memory.hpp" />
     <ClInclude Include="optional.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

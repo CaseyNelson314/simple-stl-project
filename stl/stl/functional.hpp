@@ -1,8 +1,10 @@
 #pragma once
 
 #include <algorithm>  // std::forward std::swap
-#include <functional>
 
+
+#include "memory.hpp"  // casey::shared_ptr
+#include <memory>
 #include "exception.hpp"
 
 namespace casey {
@@ -24,18 +26,13 @@ namespace casey {
 
 		// ファンクタを保持するための仮想関数テーブル
 		struct VTable {
-
-			/// @brief void関数ポインタをセットされたファンクタ型に応じてキャストし呼び出す
-			R(*call)(void* functionPtr, Args&&... args);
-
-			/// @brief delete
-			void (*destroy)(void* functionPtr);
-
+			R(*call)(void*, Args&&...);
+			void (*destroy)(void*);
 		};
 
 		VTable* vTable;
 
-		void* functionPtr;
+		std::shared_ptr<void> functionPtr;
 
 	public:
 
@@ -52,17 +49,21 @@ namespace casey {
 		function(const Functor& r)
 		{
 
-			// ファンクタを保持するための仮想関数テーブル
-			static VTable staticVTable = {
-			[](void* functionPtr, Args&&... args) -> R {
-			return (*reinterpret_cast<Functor*>(functionPtr))(std::forward<Args>(args)...);
-			},
-			[](void* functionPtr) { delete reinterpret_cast<Functor*>(functionPtr); }
+			// 仮想関数テーブル構築
+			static VTable table = {
+				[](void* functionPtr, Args&&... args) -> R
+				{
+					return (*reinterpret_cast<Functor*>(functionPtr))(std::forward<Args>(args)...);
+				},
+				[](void* functionPtr)
+				{
+					delete reinterpret_cast<Functor*>(functionPtr);
+				}
 			};
 
 			// 仮想関数テーブルにセット
-			functionPtr = new Functor(r);
-			vTable = &staticVTable;
+			functionPtr = reinterpret_cast<void*>(new Functor(r));
+			vTable = &table;
 
 		}
 
@@ -70,23 +71,24 @@ namespace casey {
 		/// @param r 保持するファンクタ
 		function(function&& r) noexcept
 		{
-			std::swap(functionPtr, r.functionPtr);
-			std::swap(vTable, r.vTable);
+			vTable = r.vTable;
+			functionPtr = std::move(r.functionPtr);
 		}
 
 		/// @brief コピー代入演算子
 		function& operator=(const function& r)
 		{
-			if (this == *r);
+			if (*this == &r);
 			else {
-
+				vTable = r.vTable;
+				functionPtr = r.functionPtr;
 			}
 			return *this;
 		}
 
 		~function() noexcept {
 			if (functionPtr && vTable) {
-				vTable->destroy(functionPtr);
+				vTable->destroy(functionPtr.get());
 			}
 		}
 
@@ -94,7 +96,7 @@ namespace casey {
 		R operator()(Args&&... args)
 		{
 			if (functionPtr && vTable) {
-				return vTable->call(functionPtr, std::forward<Args>(args)...);
+				return vTable->call(functionPtr.get(), std::forward<Args>(args)...);
 			}
 			else {
 				throw bad_function_call{};
