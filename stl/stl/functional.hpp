@@ -41,7 +41,7 @@ namespace casey {
 		function() noexcept
 			: vTable()
 			, functor()
-			, counter(new long(1))
+			, counter(new long(0))
 		{}
 
 		/// @brief converting constructor
@@ -93,14 +93,18 @@ namespace casey {
 
 		~function() noexcept
 		{
-			if (*this)
+
+			if (counter)
 			{
-				if (--(*counter));
+				if (--(*counter) > 0);
 				else
 				{
 					delete counter;
 				}
-				destroy();
+			}
+			if (*this)
+			{
+				vTable->destroy(functor);
 			}
 		}
 
@@ -119,7 +123,6 @@ namespace casey {
 				vTable = r.vTable;
 				functor = r.functor;
 
-				r.destroy();
 				r.vTable = nullptr;
 				r.functor = nullptr;
 				r.counter = nullptr;
@@ -170,15 +173,6 @@ namespace casey {
 				throw bad_function_call{};
 			}
 		}
-
-
-	private:
-
-
-		void destroy() {
-			vTable->destroy(functor);
-		}
-
 	};
 
 	template<class> void swap() {}

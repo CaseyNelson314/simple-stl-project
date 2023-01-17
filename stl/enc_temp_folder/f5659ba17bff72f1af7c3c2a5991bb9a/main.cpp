@@ -15,6 +15,20 @@ int main()
 			std::cout << "a";
 		};
 		f();
+
+		casey::function<void()> ff[100];
+
+		casey::function<void()> ff0 = []() {
+			std::cout << "a";
+		};
+
+		casey::function<void()> ff1;
+
+		ff1 = std::move(ff0);
+
+		ff0();
+		
+
 	}
 
 }
