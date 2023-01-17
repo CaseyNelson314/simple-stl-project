@@ -24,7 +24,6 @@ namespace casey {
 	template <class R, class... Args>
 	class function<R(Args...)> {
 
-		// ファンクタを保持するための仮想関数テーブル
 		struct VTable {
 			R(*call)(void*, Args&&...);
 			void (*destroy)(void*);
@@ -32,77 +31,161 @@ namespace casey {
 
 		VTable* vTable;
 
-		std::shared_ptr<void> functionPtr;
+		void* functor;
+
+		long* counter;    // memory admin counter
 
 	public:
 
-		/// @brief デフォルトコンストラクタ
+		/// @brief default constructor
 		function() noexcept
-			: functionPtr()
-			, vTable()
+			: vTable()
+			, functor()
+			, counter(new long(1))
 		{}
 
-		/// @brief コピーコンストラクタ
-		/// @tparam Functor 保持するファンクタ型
-		/// @param r 保持するファンクタ
+		/// @brief converting constructor
+		/// @param r functor
 		template <class Functor>
 		function(const Functor& r)
+			: vTable()
+			, functor(new Functor(r))
+			, counter(new long(1))
 		{
-
-			// 仮想関数テーブル構築
+			// construct virtual function table
 			static VTable table = {
-				[](void* functionPtr, Args&&... args) -> R
+				[](void* functor, Args&&... args) -> R
 				{
-					return (*reinterpret_cast<Functor*>(functionPtr))(std::forward<Args>(args)...);
+					return (*reinterpret_cast<Functor*>(functor))(std::forward<Args>(args)...);
 				},
-				[](void* functionPtr)
+				[](void* functor)
 				{
-					delete reinterpret_cast<Functor*>(functionPtr);
+					delete reinterpret_cast<Functor*>(functor);
 				}
 			};
-
-			// 仮想関数テーブルにセット
-			functionPtr = reinterpret_cast<void*>(new Functor(r));
 			vTable = &table;
-
 		}
 
-		/// @brief ムーブコンストラクタ
-		/// @param r 保持するファンクタ
+
+		/// @brief copy construtor
+		/// @param r functor
+		function(const function& r) noexcept
+			: vTable(r.vTable)
+			, functor(r.functor)
+			, counter(r.counter)
+		{
+			++(*counter);
+		}
+
+
+		/// @brief move constructor
+		/// @param r functor
 		function(function&& r) noexcept
+			: vTable(r.vTable)
+			, functor(r.functor)
+			, counter(r.counter)
 		{
-			vTable = r.vTable;
-			functionPtr = std::move(r.functionPtr);
+			r.vTable = nullptr;
+			r.counter = nullptr;
+			r.functor = nullptr;
 		}
 
-		/// @brief コピー代入演算子
-		function& operator=(const function& r)
+
+		~function() noexcept
 		{
-			if (*this == &r);
-			else {
+			if (*this)
+			{
+				if (--(*counter));
+				else
+				{
+					delete counter;
+				}
+				destroy();
+			}
+		}
+
+
+		/// @brief move asingment operaotr
+		function& operator=(function&& r) noexcept
+		{
+			if (this == &r);
+			else
+			{
+				const auto count = *counter + *r.counter;
+				delete counter;
+				counter = r.counter;
+				*counter = count;
+
 				vTable = r.vTable;
-				functionPtr = r.functionPtr;
+				functor = r.functor;
+
+				r.destroy();
+				r.vTable = nullptr;
+				r.functor = nullptr;
+				r.counter = nullptr;
 			}
 			return *this;
 		}
 
-		~function() noexcept {
-			if (functionPtr && vTable) {
-				vTable->destroy(functionPtr.get());
+
+		/// @brief copy asingment operaotr
+		function& operator=(const function& r) noexcept
+		{
+			if (this == &r);
+			else
+			{
+				const auto count = *counter + *r.counter;
+				delete counter;
+				counter = r.counter;
+				*counter = count;
+				++(*counter);
+
+				vTable = r.vTable;
+				functor = r.functor;
 			}
+			return *this;
 		}
 
-		/// @brief 関数呼び出し
+
+		operator bool() const noexcept {
+			return functor && vTable;
+		}
+
+		void swap(function& r) {
+			auto&& temp = r;
+			r = *this;
+			*this = r;
+		}
+
+
+		/// @brief call functor
 		R operator()(Args&&... args)
 		{
-			if (functionPtr && vTable) {
-				return vTable->call(functionPtr.get(), std::forward<Args>(args)...);
+			if (*this)
+			{
+				return vTable->call(functor, std::forward<Args>(args)...);
 			}
-			else {
+			else
+			{
 				throw bad_function_call{};
 			}
 		}
 
+
+	private:
+
+
+		void destroy() {
+			vTable->destroy(functor);
+		}
+
 	};
+
+	template<class> void swap() {}
+
+	template <class R, class... Args>
+	void swap(function<R(Args...)>& lhs, function<R(Args...)>& rhs) {
+		lhs.swap(rhs);
+	}
 
 }
