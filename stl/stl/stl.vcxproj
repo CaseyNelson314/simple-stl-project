@@ -21,10 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{23f4953d-e21b-4921-94ee-b1bd06d95f3c}</ProjectGuid>
-    <RootNamespace>functional</RootNamespace>
+    <ProjectGuid>{a6906ec8-692a-4907-899b-7de9bf97b3bd}</ProjectGuid>
+    <RootNamespace>stl</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>stl</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -131,7 +130,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="any.hpp" />
+    <ClInclude Include="exception.hpp" />
     <ClInclude Include="functional.hpp" />
     <ClInclude Include="optional.hpp" />
   </ItemGroup>
