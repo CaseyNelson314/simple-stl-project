@@ -59,7 +59,7 @@ int main() {
 			try {
 				*temp;
 			}
-			catch (const std::exception& e) {
+			catch (const casey::exception& e) {
 				std::cerr << e.what();
 			}
 		}
